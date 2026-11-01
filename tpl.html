@@ -1,0 +1,77 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>minors2mvp 릴스 업로드 보드</title>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--tx:#1b1d2a;--mu:#6b6f82;--ac:#f5b700;--ln:#e3dfd3;--ok:#2e9d5b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1226;--card:#171d38;--tx:#eef0fa;--mu:#9aa0bd;--ln:#262d52}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;line-height:1.45}
+header{padding:20px 16px 4px;max-width:1200px;margin:auto}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mu);font-size:14px}
+h2{font-size:16px;margin:26px 16px 10px;max-width:1200px;margin-inline:auto;padding:0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;max-width:1200px;margin:auto;padding:0 16px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:16px;padding:12px;display:flex;gap:12px;flex-wrap:wrap}
+.card.done{opacity:.55}.th{width:104px;border-radius:10px;align-self:flex-start;border:1px solid var(--ln)}
+.mn{flex:1;min-width:170px}.fn{font-size:12px;color:var(--mu);word-break:break-all}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0}
+button{font:inherit;font-size:13px;border:1px solid var(--ln);background:transparent;color:var(--tx);border-radius:999px;padding:6px 11px;cursor:pointer}
+button.on{background:var(--ac);color:#1b1d2a;border-color:var(--ac);font-weight:700}
+.t{font-weight:700;font-size:15px;margin-top:8px}
+.box{width:100%;background:rgba(127,127,127,.1);border-radius:10px;padding:9px 11px;font-size:13.5px;white-space:pre-wrap;word-break:break-word}
+.tg{color:#2f7cf6}.full{width:100%;display:flex;gap:6px;flex-wrap:wrap}
+.chk{margin-left:auto;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mu)}
+nav{display:flex;gap:8px;max-width:1200px;margin:14px auto 0;padding:0 16px}nav a{flex:1;text-align:center;padding:10px 8px;border-radius:12px;border:1px solid var(--ln);color:var(--tx);text-decoration:none;font-weight:700;font-size:14px;background:var(--card)}nav a.on{background:var(--ac);border-color:var(--ac);color:#1b1d2a}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#1b1d2a;color:#fff;padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:.2s;pointer-events:none}#toast.s{opacity:1}
+</style></head><body>
+<header><h1>릴스 업로드 보드</h1><p>제목 고르고, 복사해서 인스타에 붙여넣기. 올렸으면 "올림"을 체크하면 "이미 올린 것" 페이지로 가요.</p></header><nav><a id="n1" href="#todo"></a><a id="n2" href="#done"></a></nav>
+<div id="app"></div><div id="toast"></div>
+<script>
+const DATA=__DATA__;
+let store={};try{store=JSON.parse(localStorage.getItem('m2m')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('m2m',JSON.stringify(store))}catch(e){}};
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.className='s';setTimeout(()=>t.className='',1300)}
+function copy(txt){const done=()=>toast('복사됨 ✓');
+ const fb=()=>{const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy');done()}catch(e){toast('길게 눌러 직접 복사해 주세요')}a.remove()};
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,fb)}else fb()}
+const app=document.getElementById('app');
+function card(d){
+  const st=store[d.file]||(store[d.file]={sel:0,done:false});
+  const c=document.createElement('div');c.className='card'+(st.done?' done':'');
+  const title=()=>d.titles[st.sel]||'';
+  const full=()=>[title(),d.cap,d.tags].filter(Boolean).join('\n\n');
+  c.innerHTML='<img class="th" src="'+d.img+'" alt=""><div class="mn"><div class="fn"></div><div class="row tr"></div><div class="t"></div></div>';
+  c.querySelector('.fn').textContent=d.file;
+  const tr=c.querySelector('.tr'),tt=c.querySelector('.t');
+  const paint=()=>{tr.innerHTML='';d.titles.forEach((_,i)=>{const b=document.createElement('button');b.textContent='제목 '+(i+1);if(i===st.sel)b.className='on';b.onclick=()=>{st.sel=i;save();paint()};tr.appendChild(b)});tt.textContent=title()};paint();
+  const cap=document.createElement('div');cap.className='box';cap.textContent=d.cap;c.appendChild(cap);
+  if(d.tags){const tg=document.createElement('div');tg.className='box tg';tg.textContent=d.tags;c.appendChild(tg)}
+  const f=document.createElement('div');f.className='full';
+  const mk=(l,fn)=>{const b=document.createElement('button');b.textContent=l;b.onclick=()=>copy(fn());f.appendChild(b)};
+  if(d.titles.length)mk('제목 복사',title);mk('캡션 복사',()=>d.cap);if(d.tags)mk('태그 복사',()=>d.tags);mk('전체 복사',full);
+  const lb=document.createElement('label');lb.className='chk';const cb=document.createElement('input');cb.type='checkbox';cb.checked=st.done;
+  cb.onchange=()=>{st.done=cb.checked;save();toast(st.done?'이미 올린 것으로 이동 ✓':'올릴 것으로 이동 ✓');const y=window.scrollY;render();window.scrollTo(0,y)};lb.appendChild(cb);lb.append('올림');f.appendChild(lb);
+  c.appendChild(f);return c}
+function section(title,items){
+  if(!items.length)return;
+  const h=document.createElement('h2');h.textContent=title+' ('+items.length+')';app.appendChild(h);
+  const grid=document.createElement('div');grid.className='grid';app.appendChild(grid);
+  items.forEach(d=>grid.appendChild(card(d)))}
+function render(){
+  app.innerHTML='';
+  const view=location.hash==='#done'?'done':'todo';
+  const isDone=d=>(store[d.file]||{}).done;
+  const todo=DATA.filter(d=>!isDone(d)),done=DATA.filter(isDone);
+  const n1=document.getElementById('n1'),n2=document.getElementById('n2');
+  n1.textContent='올릴 것 '+todo.length;n2.textContent='이미 올린 것 '+done.length;
+  n1.className=view==='todo'?'on':'';n2.className=view==='done'?'on':'';
+  const msg=t=>{const p=document.createElement('p');p.style.cssText='text-align:center;color:var(--mu);margin:40px 0';p.textContent=t;app.appendChild(p)};
+  if(view==='todo'){
+    ['후원 장려','후원 감사','일반 릴스','스토리'].forEach(g=>section(g,todo.filter(d=>d.g===g)));
+    if(!todo.length)msg('다 올렸어요 🎉')
+  }else{
+    ['후원 장려','후원 감사','일반 릴스','스토리'].forEach(g=>section(g,done.filter(d=>d.g===g)));
+    if(!done.length)msg('아직 올린 게 없어요. 올릴 것에서 "올림"을 체크하면 여기로 와요.')
+  }
+  window.scrollTo(0,0)}
+window.addEventListener('hashchange',render);
+render();
+</script></body></html>
